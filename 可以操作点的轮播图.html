@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title></title>
+		<style>
+			*{
+				margin: 0px;
+				padding: 0px;
+			}
+						
+			#box{
+				width: 720px;
+				height: 344px;
+				/*边框*/
+				border: solid 3px gray;
+				margin: 50px auto;
+				
+				/*有效的定位属性 作为存放图片容器的参照物*/
+				position: relative;
+				
+				/*溢出的部分设置隐藏*/
+				overflow: hidden;
+			}
+			/*设置包含图片的容器*/
+			#imgs{
+				width:5040px;
+				height:344px;
+				/*使用定位移动*/
+				position: absolute;
+				/*向左移动*/
+				left: -720px;
+			}
+			
+			#dotteds{
+				width: 100px;
+				height: 10px;
+				/*background-color: red;*/
+				/*设置定位*/
+				position: absolute;
+				bottom: 20px;
+				left: 310px;
+			}
+			
+			/*设置点集*/
+			#dotteds span{
+				/*display: inline-block;*/
+				float: left;
+				width: 10px;
+				height: 10px;
+				background-color: black;
+				border-radius: 50%;
+				margin-right: 10px;
+			}
+			
+			/*设置启动起来的第一个点的颜色*/
+			#dotteds .on{
+				background-color: red;
+			}
+			
+			/* 设置箭头*/
+			.arrow{
+				width: 50px;
+				height: 50px;
+				text-align: center;
+				line-height: 50px;
+				background-color: red;
+				position: absolute;
+				top: 147px;
+				color: white;
+				font-size: 30px;
+				/*一开始的时候是隐藏的*/
+				display: none;
+			}
+			
+			/*prev*/
+			#prev{
+				left: 0px;
+			}
+			
+			/*next*/
+			#next{
+				right: 0px;
+			}
+			
+			/*鼠标悬浮到容器上时  显示前后箭头*/
+			#box:hover #prev,#box:hover #next{
+				display: block;
+			}
+		</style>
+		<script>
+			/*
+			 	第一件事:
+			 		先使入循环播放
+			 			5 1 2 3 4 5 1
+			 	第二件事添加小圆点
+			 		点是随着图片切换的
+			 			索引index 记录图片切换到了第几张
+			 * 	第三件事
+			 * 		点击点 --- >切换到对应的图片
+			 * 			还得用索引 index 记录点击的第几个点 ---> 移动位移 先使对应的图片
+			 * 	鼠标点击下去的时候 --- 停止定时器
+			 *  鼠标起来的时候 ---- 启动定时器
+			 * 	
+			 * */
+			// 获取样式的方法
+			function getStyle(ele, attr){
+				return ele.currentStyle ? ele.currentStyle[attr] : getComputedStyle(ele)[attr];
+			}
+			
+			window.onload = function(){
+				// 第一件事 使得图片循环播放
+				// 1. 获得循环列表
+				var imagelist = document.getElementById("imgs");
+				
+				// 2. 设置一个变量 记录图片移动到了第几张
+				var index = 1;
+				
+				// 3. 获取所有的点
+				var buttons = document.getElementById("dotteds").getElementsByTagName("span");
+				
+				// 4. 获取定时器的id
+				var timer = null;
+				
+				// 修改点的颜色
+				function changeDottedColor(){
+					// 先遍历点的列表 将所有的点设置为默认色
+					for(var i = 0; i < buttons.length; i++){
+						buttons[i].className = "";
+					}
+					
+					// 只设置index对应的那个点的颜色
+					buttons[index - 1].className = "on";
+				}
+				
+				
+				
+				
+				// 移动图片的方法
+				function move(offset){
+					// 先获得原来的左移偏移量
+					var left = parseInt(getStyle(imagelist, "left"));
+					// 设置新的偏移量
+					var newLeft = left + offset;
+					
+					// 修改图片列表的偏移量
+					imagelist.style.left = newLeft + "px";
+					
+					// 记录的张数
+					// 判断循环播放的顺序
+					if(offset < 0){
+						index++;
+					}else{
+						index--;
+					}
+					
+					// 进行判断
+					if(newLeft > -720){
+						imagelist.style.left = -3600 + "px";
+						index = 5;
+					}
+					
+					if(newLeft < -3600){
+						imagelist.style.left = -720 + "px";
+						index = 1;
+					}
+					
+					// 修改点的颜色
+					changeDottedColor();
+				}
+				
+				
+				
+				// 停止定时器的方法:
+				function stop(){
+					clearInterval(timer);
+				}
+				// 启动定时器的方法:
+				function start(){
+					// 定时器完成对应的操作
+					timer = setInterval(function(){
+						move(-720);
+					},2000);
+				}
+				
+				// 第三件事:遍历点的集合  为每个点添加点击事件
+				for(var i = 0; i < buttons.length; i++){
+					buttons[i].onclick = function(){
+						// 判断点击的是不是当前点
+						if(this.className == "on"){
+							return; // 不做其他操作
+						}
+						
+						// 获取被点击的点的index
+						var myIndex = parseInt(this.getAttribute("index"));
+						
+						// 根据index获取图片移动的偏移量
+						var off = -720 * (myIndex - index);
+						
+						// 让图片移动到位置
+						move(off);
+						// 设置记录当前点的index 为点击的点的index
+						index = myIndex;
+						// 修改点的颜色
+						changeDottedColor();
+					}
+					
+					// 为每个点添加两个事件
+					// 鼠标点下的那一刻 ---  停止定时器
+					//buttons[i].onmousedown = stop;
+					
+					// 鼠标起来的那一刻的事件 --- 重新启动定时器
+					//buttons[i].onmouseup = start;
+				}
+				
+				// 轮播图的默认状态是由定时器控制的
+				start();
+				
+				// 箭头出现的时候的点击事件
+				var prev = document.getElementById("prev");
+				var next = document.getElementById("next");
+				
+				prev.onclick = function(){
+					move(720);
+				}
+				
+				next.onclick = function(){
+					move(-720);
+				}
+				
+				/*点击容器时定时器停止*/
+				var box = document.getElementById("box");
+				box.onmousedown = stop;
+				box.onmouseup = start;
+				
+			}
+		</script>
+	</head>
+	<body>
+		<div id="box">
+			<div id="imgs">
+				<img src="../../img/ban5.jpg" /><img src="../../img/ban1.jpg" /><img src="../../img/ban2.jpg" /><img src="../../img/ban3.jpg" /><img src="../../img/ban4.jpg" /><img src="../../img/ban5.jpg" /><img src="../../img/ban1.jpg" />
+			</div>
+			<div id="dotteds">
+				<!--程序运行起来之后第一个小点点的状态-->
+				<span index="1" class="on"></span>
+				<span index="2"></span>
+				<span index="3"></span>
+				<span index="4"></span>
+				<span index="5"></span>
+				<!--index的作用是用于获取在JS中点击操作时点击的是哪个-->
+			</div>
+			
+			<!--向前的符号-->
+			<div id="prev" class="arrow">&lt;</div>
+			<!--向后的符号-->
+			<div id="next" class="arrow">&gt;</div>
+			
+		</div>
+	</body>
+</html>
